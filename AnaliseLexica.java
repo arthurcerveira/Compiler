@@ -1,12 +1,12 @@
 import java.io.*;
 
-enum TokenType{ NUM,SOMA, MULT,APar,FPar, EOF}
+enum TokenType{ NUM, SOMA, MULT, SUB, DIV, APar, FPar, EOF}
 
 class Token{
-  char lexema;
+  String lexema;
   TokenType token;
 
- Token (char l, TokenType t)
+ Token (String l, TokenType t)
  	{ lexema=l;token = t;}	
 
 }
@@ -14,6 +14,8 @@ class Token{
 class AnaliseLexica {
 
 	BufferedReader arquivo;
+	int lexemaAnterior;
+	Boolean usarLexemaAnterior = false;
 
 	AnaliseLexica(String a) throws Exception
 	{
@@ -30,26 +32,50 @@ class AnaliseLexica {
 		int currchar1;
 
 			do{
-				currchar1 =  arquivo.read();
+				if (usarLexemaAnterior){
+					currchar1 = lexemaAnterior;
+					usarLexemaAnterior = false;
+				}
+				else 
+					currchar1 =  arquivo.read();
+				
 				currchar = (char) currchar1;
+				
 			} while (currchar == '\n' || currchar == ' ' || currchar =='\t' || currchar == '\r');
 			
 			if(currchar1 != eof && currchar1 !=10)
 			{
-								
-	
-				if (currchar >= '0' && currchar <= '9')
-					return (new Token (currchar, TokenType.NUM));
+				if (currchar >= '0' && currchar <= '9'){
+					String lexema = Character.toString(currchar);
+					
+					currchar1 =  arquivo.read();
+					currchar = (char) currchar1;
+					
+					while(currchar >= '0' && currchar <= '9'){
+						lexema = lexema.concat(Character.toString(currchar));
+						currchar1 =  arquivo.read();
+						currchar = (char) currchar1;
+					}
+
+					lexemaAnterior = currchar1;
+					usarLexemaAnterior = true;
+
+					return (new Token (lexema, TokenType.NUM));
+				}
 				else
 					switch (currchar){
 						case '(':
-							return (new Token (currchar,TokenType.APar));
+							return (new Token (Character.toString(currchar),TokenType.APar));
 						case ')':
-							return (new Token (currchar,TokenType.FPar));
+							return (new Token (Character.toString(currchar),TokenType.FPar));
 						case '+':
-							return (new Token (currchar,TokenType.SOMA));
+							return (new Token (Character.toString(currchar),TokenType.SOMA));
 						case '*':
-							return (new Token (currchar,TokenType.MULT));
+							return (new Token (Character.toString(currchar),TokenType.MULT));
+						case '-':
+							return (new Token (Character.toString(currchar),TokenType.SUB));
+						case '/':
+							return (new Token (Character.toString(currchar),TokenType.DIV));
 						
 						default: throw (new Exception("Caractere inválido: " + ((int) currchar)));
 					}
@@ -57,7 +83,7 @@ class AnaliseLexica {
 
 			arquivo.close();
 			
-		return (new Token(currchar,TokenType.EOF));
+		return (new Token(Character.toString(currchar),TokenType.EOF));
 		
 	}
 }

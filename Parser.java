@@ -25,7 +25,7 @@ class Parser{
 		Token tokenCorrente =  scanner.getNextToken();
 
 		if(tokenCorrente.token == TokenType.NUM)
-			return new Num(Integer.parseInt(tokenCorrente.lexema+""));
+			return new Num(Integer.parseInt(tokenCorrente.lexema));
 		
 		
 		if(tokenCorrente.token == TokenType.APar)
@@ -65,6 +65,10 @@ class Parser{
 				return new Soma(null,null);
 			case MULT:
 				return new Mult(null,null);
+			case SUB:
+				return new Sub(null,null);
+			case DIV:
+				return new Div(null,null);
 			default: 
 		}
 		return null;
