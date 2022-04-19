@@ -1,5 +1,7 @@
 main{
-    var int teste;
-    teste := 9;
+    var int teste_12ad;
+    teste := 9E-03;
     print (teste);
+
+    return teste || 5.45E+2;
 }

@@ -25,12 +25,28 @@ TOKEN :
   <MAIN: "main">
 | <ACHAVES: "{">
 | <FCHAVES: "}">
+| <PONTOVIRGULA: ";">
+| <VIRGULA: ",">
+| <ATRIB: ":=">
+| <APARENTESES: "(">
+| <FPARENTESES: ")">
+| <VAR: "var">
+| <INT: "int">
+| <BOOL: "bool">
+| <TRUE: "true">
+| <FALSE: "false">
+| <IF: "if">
+| <WHILE: "while">
+| <DO: "do">
+| <FUNC: "function">
+| <RETURN: "return">
 }
 
 TOKEN :
 {
-  <NUM : (["0"-"9"])+>
- |< ID: ["a"-"z","A"-"Z"] ( ["a"-"z","A"-"Z","0"-"9"])*>
+  <NUM : (["0"-"9"])+ ("."(["0"-"9"])+)? ("E" ("+" | "-")? (["0"-"9"])+)?>
+ |< ID: (["a"-"z","A"-"Z"] ( ["a"-"z","A"-"Z","0"-"9"])* ("_" (["a"-"z","A"-"Z","0"-"9"])+)*)>
+ | <OP: "+" | "-" | "*" |  "/" | "&&" | "||" | "<" | ">" | "==">
 
 }
 
@@ -44,8 +60,24 @@ void Lugosi () :
   <MAIN> { System.out.println("Palavra reservada: main");}
 | <ACHAVES> { System.out.println("Abre chaves: {");}
 | <FCHAVES> { System.out.println("Fecha chaves: }");}
+| <PONTOVIRGULA> { System.out.println("Ponto e virgula: ;");}
+| <VIRGULA> { System.out.println("Virgula: ,");}
+| <ATRIB> { System.out.println("Atribuição: :=");}
+| <APARENTESES> { System.out.println("Abre parênteses: (");}
+| <FPARENTESES> { System.out.println("Fecha parênteses: )");}
+| <VAR> { System.out.println("Palavra reservada: var");}
+| <INT> { System.out.println("Palavra reservada: int");}
+| <BOOL> { System.out.println("Palavra reservada: bool");}
+| <TRUE> { System.out.println("Palavra reservada: true");}
+| <FALSE> { System.out.println("Palavra reservada: false");}
+| <IF> { System.out.println("Palavra reservada: if");}
+| <WHILE> { System.out.println("Palavra reservada: while");}
+| <DO> { System.out.println("Palavra reservada: do");}
+| <FUNC> { System.out.println("Palavra reservada: function");}
+| <RETURN> { System.out.println("Palavra reservada: return");}
 | t=<NUM> { System.out.println("Número: "+ t.image);}
 | t=<ID> { System.out.println("Identificador: "+ t.image);}
+| t=<OP> { System.out.println("Operador: "+ t.image);}
 )*
 <EOF> 
 

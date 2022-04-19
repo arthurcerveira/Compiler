@@ -1,0 +1,10 @@
+main{
+    bool condicao;
+    condicao := true;
+
+    if (condicao && false) {
+        return 5.2E+3
+    }
+
+    return 1.24E-2
+}
