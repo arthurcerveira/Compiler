@@ -1,0 +1,58 @@
+PARSER_BEGIN(Lugosi)
+import java.io.*;
+public class Lugosi {
+
+  public static void main(String args[]) throws ParseException,IOException {
+    
+ Lugosi analisador = new Lugosi(new FileInputStream(args[0]));
+ analisador.Lugosi();
+  }
+
+}
+
+PARSER_END(Lugosi)
+
+SKIP :
+{
+  " "
+| "\t"
+| "\n"
+| "\r"
+}
+
+TOKEN :
+{
+  <MAIN: "main">
+| <ACHAVES: "{">
+| <FCHAVES: "}">
+}
+
+TOKEN :
+{
+  <NUM : (["0"-"9"])+>
+ |< ID: ["a"-"z","A"-"Z"] ( ["a"-"z","A"-"Z","0"-"9"])*>
+
+}
+
+
+
+void Lugosi () :
+{Token t;}
+{
+
+(
+  <MAIN> { System.out.println("Palavra reservada: main");}
+| <ACHAVES> { System.out.println("Abre chaves: {");}
+| <FCHAVES> { System.out.println("Fecha chaves: }");}
+| t=<NUM> { System.out.println("Número: "+ t.image);}
+| t=<ID> { System.out.println("Identificador: "+ t.image);}
+)*
+<EOF> 
+
+
+}
+
+
+
+
+
