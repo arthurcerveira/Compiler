@@ -1,0 +1,18 @@
+main{
+    var int teste_12ad;
+    teste_12ad := 9E-03;
+    print (teste_12ad);
+
+    while ((teste_12ad < 47)) {
+        teste_12ad := andfab (teste_12ad);
+    };
+
+    return (teste_12ad || 5.45E+2);
+}
+
+function int andfab (int a) {
+    var int b;
+    b := 1;
+
+    return ((a - b) * 2);
+}
