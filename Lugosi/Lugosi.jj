@@ -1,13 +1,73 @@
 PARSER_BEGIN(Lugosi)
 import java.io.*;
+import java.util.ArrayList;
+
+class ArvoreLugosi{
+  ArrayList<Comando> comandos;
+
+  ArvoreLugosi(ArrayList comandos)
+  {this.comandos=comandos;}
+}
+
+class Comando{}
+
+class Atrib extends Comando{
+   String tipo;
+   String id;
+   Exp exp = null;
+
+   Atrib (String tipo, String id)
+   {
+    this.tipo=tipo;
+    this.id=id;
+    this.exp=null;
+   }
+
+   public String toString() {
+     return this.tipo + " " + this.id + " := ";
+   }
+}
+
+class Exp{}
+
+class Num extends Exp{
+  int num;
+
+  Num(int num)
+  {this.num = num;}
+}
+
+class Var extends Exp{
+  String var;
+
+  Var(String var)
+  {this.var=var;}
+}
+
+
 public class Lugosi {
 
-  public static void main(String args[]) throws ParseException,IOException {
-    
- Lugosi analisador = new Lugosi(new FileInputStream(args[0]));
- analisador.Lugosi();
-  }
+  public static void main(String args[]) throws Exception {
 
+    FileInputStream fs = new FileInputStream(new File(args[0]));
+
+    Lugosi parser = new Lugosi(fs);
+
+    ArvoreLugosi arvore = parser.Lugosi();
+
+    geraCodigo(arvore, args[0]);
+
+    }
+
+  public static void geraCodigo(ArvoreLugosi prog, String arquivo){
+    System.out.println("main(){");
+    for (Comando c : prog.comandos) {
+      System.out.print("Comando: ");
+      System.out.println(c);
+    }
+    System.out.println("}");
+
+    }
 }
 
 PARSER_END(Lugosi)
@@ -55,40 +115,44 @@ TOKEN :
 
 // LUGOSI -> MAIN FUNC?
 
-void Lugosi () :
-{}
+ArvoreLugosi Lugosi () :
+{ArrayList comandos= new ArrayList();}
 {
-  Main()
-  (Func ()) ?
+  Main(comandos)
+// (Func ()) ?
   <EOF> 
+  {return new ArvoreLugosi(comandos);}
 }
 
 // MAIN -> "main" "{" VARDECL SEQCOMANDOS "}"
 
-void Main () :
+void Main (ArrayList comandos) :
 {}
 {
-  <MAIN> <ACHAVES> Vardecl () SeqComandos () <FCHAVES>
+  <MAIN> <ACHAVES> Vardecl (comandos) SeqComandos () <FCHAVES>
 }
 
 // TIPO -> "int" | "bool" | "float" | "void"
-void Tipo () :
-{}
+String Tipo () :
+{Token tipo=null;}
 {
-  <INT> | <BOOL> | <FLOAT> | <VOID>
+  (tipo=<INT> | tipo=<BOOL> | tipo=<FLOAT> | tipo=<VOID>)
+  {return tipo.image;}
 }
 
 // VARDECL -> VARDECL "var" TIPO TOKEN_id ";" | vazio
-void Vardecl () :
-{}
+void Vardecl (ArrayList comandos) :
+{String tipo; Token id=null; Atrib c;}
 {
-  <VAR> Tipo() <ID> <PONTOVIRGULA> Vardecl2 ()
+  <VAR> tipo=Tipo() id=<ID> {c = new Atrib(tipo, id.image);} <PONTOVIRGULA> Vardecl2 (comandos)
+  {comandos.add(c);}
 } 
 
-void Vardecl2 () :
-{}
+void Vardecl2 (ArrayList comandos) :
+{String tipo; Token id=null; Atrib c;}
 {
-  <VAR> Tipo() <ID> <PONTOVIRGULA> Vardecl2 () | {}
+  (<VAR> tipo=Tipo() id=<ID> {c = new Atrib(tipo, id.image);} 
+  {comandos.add(c);} <PONTOVIRGULA> Vardecl2 (comandos)) | ({})
 } 
 
 
@@ -160,19 +224,19 @@ void ListaExp2 () :
 
 // FUNC -> FUNC "function" TIPO TOKEN_id "(" LISTAARG? ")" "{" VARDECL SEQCOMANDOS "}"
 // | "function" TIPO TOKEN_id "(" LISTAARG? ")" "{" VARDECL SEQCOMANDOS "}"
-void Func () :
-{}
-{
-  <FUNC> Tipo () <ID> <APARENTESES> ListaArg () <FPARENTESES> <ACHAVES> 
-  Vardecl () SeqComandos () <FCHAVES> Func2 ()
-}
+// void Func () :
+// {}
+// {
+//   <FUNC> Tipo () <ID> <APARENTESES> ListaArg () <FPARENTESES> <ACHAVES> 
+//   Vardecl () SeqComandos () <FCHAVES> Func2 ()
+// }
 
-void Func2 () :
-{}
-{
-  <FUNC> Tipo () <ID> <APARENTESES> ListaArg () <FPARENTESES> <ACHAVES> 
-  Vardecl () SeqComandos () <FCHAVES> Func2 () | {}
-}
+// void Func2 () :
+// {}
+// {
+//   <FUNC> Tipo () <ID> <APARENTESES> ListaArg () <FPARENTESES> <ACHAVES> 
+//   Vardecl () SeqComandos () <FCHAVES> Func2 () | {}
+// }
 
 
 // LISTAARG -> TIPO TOKEN_id | LISTAARG "," TIPO TOKEN_id
