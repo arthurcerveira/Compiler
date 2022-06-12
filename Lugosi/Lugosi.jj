@@ -41,6 +41,77 @@ class Atrib extends Comando{
    }
 }
 
+class Condicional extends Comando{
+    String condicional;
+    Exp condicao;
+    ArrayList<Comando> comandos;
+
+    Condicional (String condicional, Exp condicao, ArrayList comandos)
+    {
+     this.condicional=condicional;
+     this.condicao=condicao;
+     this.comandos=comandos;
+    }
+
+    public String toString() {
+      String s = this.condicional + " " + this.condicao + " {\n";
+
+      for (Comando c : this.comandos) {
+        s += "\t\t"+ c.toString() + "\n";
+      }
+      return  s + "\t}";
+    }
+}
+
+class DoWhile extends Comando{
+    Exp condicao;
+    ArrayList<Comando> comandos;
+
+    DoWhile (Exp condicao, ArrayList comandos)
+    {
+     this.condicao=condicao;
+     this.comandos=comandos;
+    }
+
+    public String toString() {
+      String s = "do {\n";
+
+      for (Comando c : this.comandos) {
+        s += "\t\t"+ c.toString() + "\n";
+      }
+      return  s + "\t} while " + this.condicao + ";";
+    }
+}
+
+class funcaoChamadaCom extends Comando {
+  String id;
+  ListaExp exps;
+
+  funcaoChamadaCom(String id, ListaExp exps)
+  {
+    this.id=id;
+    this.exps=exps;
+  }
+
+  public String toString() {
+     return this.id + this.exps + ";";
+   }
+}
+
+class Return extends Comando {
+  Exp exp;
+
+  Return(Exp exp)
+  {
+    this.exp=exp;
+  }
+
+  public String toString() {
+     return "return "+ this.exp + ";";
+   }
+}
+
+
 class Exp{}
 
 class Op extends Exp{
@@ -142,9 +213,9 @@ public class Lugosi {
     }
 
   public static void geraCodigo(ArvoreLugosi prog, String arquivo){
-    System.out.println("main(){");
+    System.out.println("\npublic static void main(String args[]) {");
     for (Comando c : prog.comandos) {
-      System.out.print("Comando: ");
+      System.out.print("\t");
       System.out.println(c);
     }
     System.out.println("}");
@@ -253,22 +324,32 @@ void SeqComandos (ArrayList comandos) :
 // | "return" EXP ";"
 // | "print" "(" EXP ")" ";"
 void Comando (ArrayList comandos) :
-{Comando c=null; Token id=null; Exp exp=null; ArrayList listaexp=new ArrayList();}
+{
+  Comando c=null; 
+  Token id=null; 
+  Exp e=null; 
+  ArrayList le=new ArrayList();
+  ArrayList comandosCond=new ArrayList();
+  }
 {
   (id=<ID> c = Comando2 (id.image) |
-  <IF> <APARENTESES> Exp () <FPARENTESES> <ACHAVES> SeqComandos (comandos) <FCHAVES> <PONTOVIRGULA> |
-  <WHILE> <APARENTESES> Exp () <FPARENTESES> <ACHAVES> SeqComandos (comandos) <FCHAVES> <PONTOVIRGULA> |
-  <DO> <ACHAVES> SeqComandos (comandos) <FCHAVES> <WHILE> <APARENTESES> Exp () <FPARENTESES> <PONTOVIRGULA> |
-  <RETURN> Exp () <PONTOVIRGULA> |
-  <PRINT> <APARENTESES> Exp () <FPARENTESES> <PONTOVIRGULA>)
+  <IF> <APARENTESES> e=Exp () <FPARENTESES> <ACHAVES> SeqComandos (comandosCond) <FCHAVES> <PONTOVIRGULA> 
+  {c = new Condicional("if", e, comandosCond);}|
+  <WHILE> <APARENTESES> e=Exp () <FPARENTESES> <ACHAVES> SeqComandos (comandosCond) <FCHAVES> <PONTOVIRGULA> 
+  {c = new Condicional("while", e, comandosCond);}|
+  <DO> <ACHAVES> SeqComandos (comandosCond) <FCHAVES> <WHILE> <APARENTESES> e=Exp () <FPARENTESES> <PONTOVIRGULA> 
+  {c = new DoWhile(e, comandosCond);}|
+  <RETURN> e=Exp () <PONTOVIRGULA> {c = new Return(e);}|
+  <PRINT> <APARENTESES> e=Exp () {le.add(e);} <FPARENTESES> <PONTOVIRGULA> 
+  {c = new funcaoChamadaCom("print", new ListaExp(le));})
   {comandos.add(c);}
 }
 
 Comando Comando2 (String id) :
-{Comando c=null;Exp e = null;}
+{Comando c=null; Exp e = null; ListaExp le = null;}
 {
-  (<ATRIB> (e = Exp ()) <PONTOVIRGULA>  {c = new Atrib (id, e);}|
-  <APARENTESES> ListaExp () <FPARENTESES> <PONTOVIRGULA>)
+  (<ATRIB> e = Exp () <PONTOVIRGULA>  {c = new Atrib (id, e);}
+  |<APARENTESES> le = ListaExp () <FPARENTESES> <PONTOVIRGULA> {c = new funcaoChamadaCom (id, le);})
   {return c;}
 }
 
