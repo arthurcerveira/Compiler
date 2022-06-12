@@ -11,30 +11,77 @@ class ArvoreLugosi{
 
 class Comando{}
 
-class Atrib extends Comando{
+class VarDecl extends Comando{
    String tipo;
    String id;
-   Exp exp = null;
 
-   Atrib (String tipo, String id)
+   VarDecl (String tipo, String id)
    {
     this.tipo=tipo;
     this.id=id;
-    this.exp=null;
    }
 
    public String toString() {
-     return this.tipo + " " + this.id + " := ";
+     return this.tipo + " " + this.id + ";";
+   }
+}
+
+class Atrib extends Comando{
+   String id;
+   Exp exp = null;
+
+   Atrib (String id, Exp exp)
+   {
+    this.id=id;
+    this.exp=exp;
+   }
+
+   public String toString() {
+     return this.id + " = " + this.exp + ";";
    }
 }
 
 class Exp{}
 
-class Num extends Exp{
-  int num;
+class Op extends Exp{
+  String op;
+  Exp e1;
+  Exp e2;
 
-  Num(int num)
+  Op (String op, Exp e1, Exp e2)
+  {
+    this.op=op;
+    this.e1=e1;
+    this.e2=e2;
+  }
+
+  public String toString() {
+    return "(" + this.e1 + " " + this.op + " " + this.e2 + ")";
+  }
+}
+
+class Num extends Exp{
+  float num;
+
+  Num(float num)
   {this.num = num;}
+
+  public String toString() {
+     return Float.toString(this.num);
+   }
+}
+
+class Bool extends Exp{
+  boolean b;
+
+  Bool(boolean b)
+  {this.b = b;}
+
+  public String toString() {
+     return this.b
+        ? "true"
+        : "false";
+   }
 }
 
 class Var extends Exp{
@@ -42,8 +89,43 @@ class Var extends Exp{
 
   Var(String var)
   {this.var=var;}
+
+  public String toString() {
+     return this.var;
+   }
 }
 
+class ListaExp extends Exp{
+  ArrayList<Exp> exps;
+
+  ListaExp(ArrayList exps)
+  {this.exps=exps;}
+
+  public String toString() {
+      String s = "(";
+      
+      for (Exp e : this.exps) {
+        s += e.toString() + ",";
+      }
+      
+      return s.substring(0, s.length() - 1) + ")";
+   }
+}
+
+class funcaoChamada extends Exp {
+  String id;
+  ListaExp exps;
+
+  funcaoChamada(String id, ListaExp exps)
+  {
+    this.id=id;
+    this.exps=exps;
+  }
+
+  public String toString() {
+     return this.id + this.exps;
+   }
+}
 
 public class Lugosi {
 
@@ -129,7 +211,7 @@ ArvoreLugosi Lugosi () :
 void Main (ArrayList comandos) :
 {}
 {
-  <MAIN> <ACHAVES> Vardecl (comandos) SeqComandos () <FCHAVES>
+  <MAIN> <ACHAVES> Vardecl (comandos) SeqComandos (comandos) <FCHAVES>
 }
 
 // TIPO -> "int" | "bool" | "float" | "void"
@@ -142,25 +224,25 @@ String Tipo () :
 
 // VARDECL -> VARDECL "var" TIPO TOKEN_id ";" | vazio
 void Vardecl (ArrayList comandos) :
-{String tipo; Token id=null; Atrib c;}
+{String tipo; Token id=null; VarDecl vd;}
 {
-  <VAR> tipo=Tipo() id=<ID> {c = new Atrib(tipo, id.image);} <PONTOVIRGULA> Vardecl2 (comandos)
-  {comandos.add(c);}
+  <VAR> tipo=Tipo() id=<ID> {vd = new VarDecl(tipo, id.image);} <PONTOVIRGULA> Vardecl2 (comandos)
+  {comandos.add(vd);}
 } 
 
 void Vardecl2 (ArrayList comandos) :
-{String tipo; Token id=null; Atrib c;}
+{String tipo; Token id=null; VarDecl vd;}
 {
-  (<VAR> tipo=Tipo() id=<ID> {c = new Atrib(tipo, id.image);} 
-  {comandos.add(c);} <PONTOVIRGULA> Vardecl2 (comandos)) | ({})
+  (<VAR> tipo=Tipo() id=<ID> {vd = new VarDecl(tipo, id.image);} 
+  {comandos.add(vd);} <PONTOVIRGULA> Vardecl2 (comandos)) | ({})
 } 
 
 
 // SEQCOMANDOS -> SEQCOMANDOS COMANDO | vazio
-void SeqComandos () :
+void SeqComandos (ArrayList comandos) :
 {}
 {
-  Comando () SeqComandos () | {}
+  Comando (comandos) SeqComandos (comandos) | {}
 }
 
 // COMANDO -> TOKEN_id ":=" EXP ";"
@@ -170,56 +252,65 @@ void SeqComandos () :
 // | "do" "{" SEQCOMANDOS "}" "while" "(" EXP ")" ";"
 // | "return" EXP ";"
 // | "print" "(" EXP ")" ";"
-void Comando () :
-{}
+void Comando (ArrayList comandos) :
+{Comando c=null; Token id=null; Exp exp=null; ArrayList listaexp=new ArrayList();}
 {
-  <ID> Comando2 () |
-  <IF> <APARENTESES> Exp () <FPARENTESES> <ACHAVES> SeqComandos () <FCHAVES> <PONTOVIRGULA> |
-  <WHILE> <APARENTESES> Exp () <FPARENTESES> <ACHAVES> SeqComandos () <FCHAVES> <PONTOVIRGULA> |
-  <DO> <ACHAVES> SeqComandos () <FCHAVES> <WHILE> <APARENTESES> Exp () <FPARENTESES> <PONTOVIRGULA> |
+  (id=<ID> c = Comando2 (id.image) |
+  <IF> <APARENTESES> Exp () <FPARENTESES> <ACHAVES> SeqComandos (comandos) <FCHAVES> <PONTOVIRGULA> |
+  <WHILE> <APARENTESES> Exp () <FPARENTESES> <ACHAVES> SeqComandos (comandos) <FCHAVES> <PONTOVIRGULA> |
+  <DO> <ACHAVES> SeqComandos (comandos) <FCHAVES> <WHILE> <APARENTESES> Exp () <FPARENTESES> <PONTOVIRGULA> |
   <RETURN> Exp () <PONTOVIRGULA> |
-  <PRINT> <APARENTESES> Exp () <FPARENTESES> <PONTOVIRGULA>
+  <PRINT> <APARENTESES> Exp () <FPARENTESES> <PONTOVIRGULA>)
+  {comandos.add(c);}
 }
 
-void Comando2 () :
-{}
+Comando Comando2 (String id) :
+{Comando c=null;Exp e = null;}
 {
-  <ATRIB> Exp () <PONTOVIRGULA> |
-  <APARENTESES> ListaExp () <FPARENTESES> <PONTOVIRGULA>
+  (<ATRIB> (e = Exp ()) <PONTOVIRGULA>  {c = new Atrib (id, e);}|
+  <APARENTESES> ListaExp () <FPARENTESES> <PONTOVIRGULA>)
+  {return c;}
 }
 
 // EXP -> "(" EXP OP EXP ")" | FATOR
-void Exp () :
-{}
+Exp Exp () :
+{Exp e=null; Exp e1=null; Exp e2=null;Token op=null;}
 {
-  <APARENTESES> Exp () <OP> Exp () <FPARENTESES> | Fator ()
+  (<APARENTESES> e1=Exp () op=<OP> e2=Exp () <FPARENTESES> {e = new Op(op.image, e1, e2);}| e=Fator ())
+  {return e;}
 }
 
 // FATOR -> TOKEN_id | TOKEN_id "(" LISTAEXP? ")"
 // | TOKEN_numliteral | "true" | "false"
-void Fator () :
-{}
+Exp Fator () :
+{Exp e=null; Token t=null; ListaExp le=null;}
 {
-  <NUM> | <ID> Fator2 () | <TRUE> | <FALSE>
+  ( t=<NUM> {e = new Num(Float.parseFloat(t.image));}
+  | t=<ID> le = Fator2 () {e = new funcaoChamada(t.image, le);}
+  | t=<TRUE> {e = new Bool(true);}
+  | t=<FALSE> {e = new Bool(false);})
+  {return e;}
 }
 
-void Fator2 ():
-{}
+ListaExp Fator2 ():
+{ListaExp le=null; }
 {
-  <APARENTESES> ListaExp () <FPARENTESES> | {}
+  (<APARENTESES> le = ListaExp () <FPARENTESES> | {})
+  {return le;}
 }
 
 // LISTAEXP -> EXP | LISTAEXP "," EXP
-void ListaExp () :
-{}
+ListaExp ListaExp () :
+{ArrayList exps=new ArrayList(); Exp e=null;}
 {
-  Exp () ListaExp2 ()
+  e = Exp () {exps.add(e);} ListaExp2 (exps)
+  {return new ListaExp(exps);}
 }
 
-void ListaExp2 () :
-{}
+void ListaExp2 (ArrayList exps) :
+{Exp e=null;}
 {
-  <VIRGULA> Exp () ListaExp2 () | {}
+  <VIRGULA> e = Exp () {exps.add(e);} ListaExp2 (exps) | {}
 }
 
 // FUNC -> FUNC "function" TIPO TOKEN_id "(" LISTAARG? ")" "{" VARDECL SEQCOMANDOS "}"
@@ -228,14 +319,14 @@ void ListaExp2 () :
 // {}
 // {
 //   <FUNC> Tipo () <ID> <APARENTESES> ListaArg () <FPARENTESES> <ACHAVES> 
-//   Vardecl () SeqComandos () <FCHAVES> Func2 ()
+//   Vardecl () SeqComandos (comandos) <FCHAVES> Func2 ()
 // }
 
 // void Func2 () :
 // {}
 // {
 //   <FUNC> Tipo () <ID> <APARENTESES> ListaArg () <FPARENTESES> <ACHAVES> 
-//   Vardecl () SeqComandos () <FCHAVES> Func2 () | {}
+//   Vardecl () SeqComandos (comandos) <FCHAVES> Func2 () | {}
 // }
 
 
