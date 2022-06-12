@@ -4,9 +4,12 @@ import java.util.ArrayList;
 
 class ArvoreLugosi{
   ArrayList<Comando> comandos;
+  ArrayList<Funcao> funcoes;
 
-  ArvoreLugosi(ArrayList comandos)
-  {this.comandos=comandos;}
+  ArvoreLugosi(ArrayList comandos, ArrayList funcoes){
+    this.comandos = comandos;
+    this.funcoes = funcoes;
+  }
 }
 
 class Comando{}
@@ -57,9 +60,9 @@ class Condicional extends Comando{
       String s = this.condicional + " " + this.condicao + " {\n";
 
       for (Comando c : this.comandos) {
-        s += "\t\t"+ c.toString() + "\n";
+        s += "\t\t\t"+ c.toString() + "\n";
       }
-      return  s + "\t}";
+      return  s + "\t\t}";
     }
 }
 
@@ -77,9 +80,9 @@ class DoWhile extends Comando{
       String s = "do {\n";
 
       for (Comando c : this.comandos) {
-        s += "\t\t"+ c.toString() + "\n";
+        s += "\t\t\t"+ c.toString() + "\n";
       }
-      return  s + "\t} while " + this.condicao + ";";
+      return  s + "\t\t} while " + this.condicao + ";";
     }
 }
 
@@ -179,7 +182,7 @@ class ListaExp extends Exp{
         s += e.toString() + ",";
       }
       
-      return s.substring(0, s.length() - 1) + ")";
+      return s.substring(0, s.length() - 1);
    }
 }
 
@@ -198,6 +201,52 @@ class funcaoChamada extends Exp {
    }
 }
 
+class Arg{
+  String tipo;
+  String id;
+
+  Arg(String tipo, String id)
+  {
+    this.tipo=tipo;
+    this.id=id;
+  }
+
+  public String toString() {
+     return this.tipo + " " + this.id;
+   }
+}
+
+class Funcao{
+  String tipo;
+  String id;
+  ArrayList<Arg> argumentos;
+  ArrayList<Comando> comandos;
+
+    Funcao (String tipo, String id, ArrayList argumentos, ArrayList comandos)
+    {
+     this.tipo=tipo;
+     this.id=id;
+     this.argumentos=argumentos;
+     this.comandos=comandos;
+    }
+
+    public String toString() {
+      String s = "\tpublic " + this.tipo + " " + this.id + "(";
+
+      for (Arg a : this.argumentos) {
+        s += a.toString() + ",";
+      }
+
+      s = s.substring(0, s.length() - 1) + ") {\n";
+
+      for (Comando c : this.comandos) {
+        s += "\t\t"+ c.toString() + "\n";
+      }
+
+      return  s + "\t}\n";
+    }
+}
+
 public class Lugosi {
 
   public static void main(String args[]) throws Exception {
@@ -213,14 +262,20 @@ public class Lugosi {
     }
 
   public static void geraCodigo(ArvoreLugosi prog, String arquivo){
-    System.out.println("\npublic static void main(String args[]) {");
+    System.out.println("\npublic class Programa {");
+    System.out.println("\tpublic static void main(String args[]) {");
+    
     for (Comando c : prog.comandos) {
-      System.out.print("\t");
+      System.out.print("\t\t");
       System.out.println(c);
     }
-    System.out.println("}");
+    System.out.println("\t}\n");
 
+    for (Funcao f : prog.funcoes) {
+      System.out.println(f);
     }
+    System.out.println("}");
+  }
 }
 
 PARSER_END(Lugosi)
@@ -269,12 +324,12 @@ TOKEN :
 // LUGOSI -> MAIN FUNC?
 
 ArvoreLugosi Lugosi () :
-{ArrayList comandos= new ArrayList();}
+{ArrayList comandos= new ArrayList(); ArrayList funcoes= new ArrayList();}
 {
   Main(comandos)
-// (Func ()) ?
+ (Func (funcoes)) ?
   <EOF> 
-  {return new ArvoreLugosi(comandos);}
+  {return new ArvoreLugosi(comandos, funcoes);}
 }
 
 // MAIN -> "main" "{" VARDECL SEQCOMANDOS "}"
@@ -346,10 +401,12 @@ void Comando (ArrayList comandos) :
 }
 
 Comando Comando2 (String id) :
-{Comando c=null; Exp e = null; ListaExp le = null;}
+{Comando c=null; Exp e = null; ArrayList exps = new ArrayList();}
 {
-  (<ATRIB> e = Exp () <PONTOVIRGULA>  {c = new Atrib (id, e);}
-  |<APARENTESES> le = ListaExp () <FPARENTESES> <PONTOVIRGULA> {c = new funcaoChamadaCom (id, le);})
+  ( <ATRIB> e = Exp () <PONTOVIRGULA>  {c = new Atrib (id, e);}
+  | <APARENTESES> ListaExp (exps) <FPARENTESES> <PONTOVIRGULA> 
+    {c = new funcaoChamadaCom (id, new ListaExp(exps));})
+  
   {return c;}
 }
 
@@ -364,28 +421,26 @@ Exp Exp () :
 // FATOR -> TOKEN_id | TOKEN_id "(" LISTAEXP? ")"
 // | TOKEN_numliteral | "true" | "false"
 Exp Fator () :
-{Exp e=null; Token t=null; ListaExp le=null;}
+{Exp e=null; Token t=null; ArrayList exps=new ArrayList();}
 {
   ( t=<NUM> {e = new Num(Float.parseFloat(t.image));}
-  | t=<ID> le = Fator2 () {e = new funcaoChamada(t.image, le);}
+  | t=<ID> Fator2 (exps) {e = new funcaoChamada(t.image, new ListaExp(exps));}
   | t=<TRUE> {e = new Bool(true);}
   | t=<FALSE> {e = new Bool(false);})
   {return e;}
 }
 
-ListaExp Fator2 ():
-{ListaExp le=null; }
+void Fator2 (ArrayList exps) :
+{}
 {
-  (<APARENTESES> le = ListaExp () <FPARENTESES> | {})
-  {return le;}
+  <APARENTESES> ListaExp (exps) <FPARENTESES> | {}
 }
 
 // LISTAEXP -> EXP | LISTAEXP "," EXP
-ListaExp ListaExp () :
-{ArrayList exps=new ArrayList(); Exp e=null;}
+void ListaExp (ArrayList exps) :
+{Exp e=null;}
 {
   e = Exp () {exps.add(e);} ListaExp2 (exps)
-  {return new ListaExp(exps);}
 }
 
 void ListaExp2 (ArrayList exps) :
@@ -396,30 +451,35 @@ void ListaExp2 (ArrayList exps) :
 
 // FUNC -> FUNC "function" TIPO TOKEN_id "(" LISTAARG? ")" "{" VARDECL SEQCOMANDOS "}"
 // | "function" TIPO TOKEN_id "(" LISTAARG? ")" "{" VARDECL SEQCOMANDOS "}"
-// void Func () :
-// {}
-// {
-//   <FUNC> Tipo () <ID> <APARENTESES> ListaArg () <FPARENTESES> <ACHAVES> 
-//   Vardecl () SeqComandos (comandos) <FCHAVES> Func2 ()
-// }
+void Func (ArrayList funcoes) :
+ {String tipo; Token id=null; ArrayList la=new ArrayList(); ArrayList comandosF=new ArrayList();}
+ {
+   <FUNC> tipo=Tipo () id=<ID> <APARENTESES> ListaArg (la) <FPARENTESES> <ACHAVES> 
+   Vardecl (comandosF) SeqComandos (comandosF) <FCHAVES> {funcoes.add(new Funcao(tipo, id.image, la, comandosF));}
+   Func2 (funcoes)
+ }
 
-// void Func2 () :
-// {}
-// {
-//   <FUNC> Tipo () <ID> <APARENTESES> ListaArg () <FPARENTESES> <ACHAVES> 
-//   Vardecl () SeqComandos (comandos) <FCHAVES> Func2 () | {}
-// }
+ void Func2 (ArrayList funcoes) :
+ {String tipo; Token id=null; ArrayList la=new ArrayList(); ArrayList comandosF=new ArrayList();}
+ {
+   <FUNC> tipo=Tipo () id=<ID> <APARENTESES> ListaArg (la) <FPARENTESES> <ACHAVES> 
+   Vardecl (comandosF) SeqComandos (comandosF) <FCHAVES> 
+   {funcoes.add(new Funcao(tipo, id.image, la, comandosF));}
+   Func2 (funcoes) | {}
+ }
 
 
 // LISTAARG -> TIPO TOKEN_id | LISTAARG "," TIPO TOKEN_id
-void ListaArg () :
-{}
+void ListaArg (ArrayList la) :
+{String tipo; Token id=null;}
 {
-  Tipo () <ID> ListaArg2 () 
+  tipo = Tipo () id = <ID> ListaArg2 (la) 
+  {la.add(new Arg(tipo, id.image));} 
 }
 
-void ListaArg2 () :
-{}
+void ListaArg2 (ArrayList la) :
+{String tipo; Token id=null;}
 {
-  <VIRGULA>  Tipo () <ID> ListaArg2 () | {}
+  <VIRGULA> tipo = Tipo () id = <ID> ListaArg2 (la) 
+  {la.add(new Arg(tipo, id.image));} | {}
 }
