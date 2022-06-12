@@ -20,6 +20,9 @@ class VarDecl extends Comando{
 
    VarDecl (String tipo, String id)
    {
+    if (tipo.equals("bool")) {
+      tipo = "boolean";
+    }
     this.tipo=tipo;
     this.id=id;
    }
@@ -97,7 +100,7 @@ class funcaoChamadaCom extends Comando {
   }
 
   public String toString() {
-     return this.id + this.exps + ";";
+     return this.id + this.exps + ");";
    }
 }
 
@@ -135,13 +138,13 @@ class Op extends Exp{
 }
 
 class Num extends Exp{
-  float num;
+  String num;
 
-  Num(float num)
+  Num(String num)
   {this.num = num;}
 
   public String toString() {
-     return Float.toString(this.num);
+     return this.num;
    }
 }
 
@@ -176,6 +179,10 @@ class ListaExp extends Exp{
   {this.exps=exps;}
 
   public String toString() {
+      if (this.exps.size() == 0) {
+        return "";
+      }
+
       String s = "(";
       
       for (Exp e : this.exps) {
@@ -197,7 +204,10 @@ class funcaoChamada extends Exp {
   }
 
   public String toString() {
-     return this.id + this.exps;
+     if (this.exps.exps.size() == 0) {
+       return this.id;
+     }
+     return this.id + this.exps + ")";
    }
 }
 
@@ -207,6 +217,9 @@ class Arg{
 
   Arg(String tipo, String id)
   {
+    if (tipo.equals("bool")) {
+      tipo = "boolean";
+    }
     this.tipo=tipo;
     this.id=id;
   }
@@ -224,6 +237,9 @@ class Funcao{
 
     Funcao (String tipo, String id, ArrayList argumentos, ArrayList comandos)
     {
+      if (tipo.equals("bool")) {
+        tipo = "boolean";
+      }
      this.tipo=tipo;
      this.id=id;
      this.argumentos=argumentos;
@@ -231,7 +247,7 @@ class Funcao{
     }
 
     public String toString() {
-      String s = "\tpublic " + this.tipo + " " + this.id + "(";
+      String s = "\tpublic static " + this.tipo + " " + this.id + "(";
 
       for (Arg a : this.argumentos) {
         s += a.toString() + ",";
@@ -258,8 +274,7 @@ public class Lugosi {
     ArvoreLugosi arvore = parser.Lugosi();
 
     geraCodigo(arvore, args[0]);
-
-    }
+  }
 
   public static void geraCodigo(ArvoreLugosi prog, String arquivo){
     System.out.println("\npublic class Programa {");
@@ -396,7 +411,7 @@ void Comando (ArrayList comandos) :
   {c = new DoWhile(e, comandosCond);}|
   <RETURN> e=Exp () <PONTOVIRGULA> {c = new Return(e);}|
   <PRINT> <APARENTESES> e=Exp () {le.add(e);} <FPARENTESES> <PONTOVIRGULA> 
-  {c = new funcaoChamadaCom("print", new ListaExp(le));})
+  {c = new funcaoChamadaCom("System.out.println", new ListaExp(le));})
   {comandos.add(c);}
 }
 
@@ -423,7 +438,7 @@ Exp Exp () :
 Exp Fator () :
 {Exp e=null; Token t=null; ArrayList exps=new ArrayList();}
 {
-  ( t=<NUM> {e = new Num(Float.parseFloat(t.image));}
+  ( t=<NUM> {e = new Num(t.image);}
   | t=<ID> Fator2 (exps) {e = new funcaoChamada(t.image, new ListaExp(exps));}
   | t=<TRUE> {e = new Bool(true);}
   | t=<FALSE> {e = new Bool(false);})
@@ -473,13 +488,14 @@ void Func (ArrayList funcoes) :
 void ListaArg (ArrayList la) :
 {String tipo; Token id=null;}
 {
-  tipo = Tipo () id = <ID> ListaArg2 (la) 
-  {la.add(new Arg(tipo, id.image));} 
+  tipo = Tipo () id = <ID> {la.add(new Arg(tipo, id.image));}
+  ListaArg2 (la)  
 }
 
 void ListaArg2 (ArrayList la) :
 {String tipo; Token id=null;}
 {
-  <VIRGULA> tipo = Tipo () id = <ID> ListaArg2 (la) 
-  {la.add(new Arg(tipo, id.image));} | {}
+  <VIRGULA> tipo = Tipo () id = <ID>
+  {la.add(new Arg(tipo, id.image));} 
+  ListaArg2 (la) | {}
 }

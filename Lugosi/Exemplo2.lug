@@ -1,27 +1,18 @@
 main{
-    var bool teste_12ad;
-    var float afsaf_asf13d;
-    var int nvng;
+    var bool verdadeiro;
+    var int count;
+    var float max;
 
-    afsaf_asf13d := (5 + 3);
-    if ((teste_12ad == true)) {
-        xgdg (1, (3+5), nvng);
-        nvng := 7;
+    verdadeiro := true;
+    count := 0;
+    max := 20;
+
+    if ((verdadeiro == true)) {
+        count := (count + 1);
     };
 
     do {
-        afsaf_asf13d := (afsaf_asf13d + 1);
-    } while ((afsaf_asf13d < 20));
-
-    return (afsaf_asf13d - nvng);
-}
-
-function int xgdg (int a, int b, int c) {
-    var bool n;
-
-    if ((n &&(a > b))) {
-        return a;
-    };
-
-    return c;
+        count := (count + 1);
+        print(count);
+    } while ((count < max));
 }

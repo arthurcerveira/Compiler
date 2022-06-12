@@ -1,18 +1,27 @@
 main{
-    var int teste_12ad;
-    teste_12ad := 9E-03;
-    print (teste_12ad);
+    var int n;
+    var int p;
+    var int s;
 
-    while ((teste_12ad < 47)) {
-        teste_12ad := andfab (teste_12ad);
-    };
+    n := 5;
+    p := 3;
 
-    return (teste_12ad || 5.45E+2);
+    s := potencia(n, p);
+
+    print(s);
 }
 
-function int andfab (int a) {
-    var int b;
-    b := 1;
+function int potencia (int n, int p) {
+    var int i;
+    var int s;
 
-    return ((a - b) * 2);
+    i := 1;
+    s := n;
+    
+    while ((i < p)) {
+        s := (s * n);
+        i := (i + 1);
+    };
+
+    return s;
 }
